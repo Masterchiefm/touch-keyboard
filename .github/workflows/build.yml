@@ -49,7 +49,7 @@ jobs:
           releaseName: "TouchKeyboard __VERSION__"
           releaseDraft: false
           prerelease: false
-          releaseBody: "Linux 触屏键盘 (Tauri 2)。Debian/Ubuntu 下载 `.deb` 安装: `sudo apt install ./TouchKeyboard_x.y.z_amd64.deb`; 其他发行版下载 `.AppImage` 直接运行 (需要 FUSE, 或 `--appimage-extract-and-run`)。Wayland 会话按键注入需要 uinput 权限: `sudo bash scripts/setup-uinput.sh` 后重新登录 (详见 README)。"
+          releaseBody: "Linux 触屏键盘 (Tauri 2)。\n\n一键安装 (自动下载本 Release 对应的安装包):\n```\ncurl -fsSL https://raw.githubusercontent.com/Masterchiefm/touch-keyboard/main/scripts/install.sh | bash\n```\n或手动下载: Debian/Ubuntu 安装 `.deb` (`sudo apt install ./TouchKeyboard_x.y.z_amd64.deb`); 其他发行版运行 `.AppImage` (需要 FUSE, 或 `--appimage-extract-and-run`)。Wayland 会话按键注入需要 uinput 权限: `sudo bash scripts/setup-uinput.sh` 后重新登录 (一键安装脚本已自动配置, 详见 README)。"
           args: --bundles deb appimage
 
       - name: Upload artifacts

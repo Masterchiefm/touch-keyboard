@@ -74,6 +74,12 @@ src-tauri/src/
 examples/set_shape.rs    # 调试: 查询/设置窗口输入区域 (cargo run --example set_shape -- <id> query)
 examples/set_workarea.rs # 调试: 设置 root 的 _NET_WORKAREA
 scripts/setup-uinput.sh  # udev 规则 + input 组
+scripts/install.sh       # 一键安装 (可 curl|bash, 不依赖仓库内其他文件): API 查最新 Release
+                         # (失败回退 releases/latest 302 重定向解析 tag) → amd64 判定 → 有 apt 且
+                         # 能提权则 apt 装 .deb, 否则 AppImage 装 ~/.local/bin + 自建 desktop 项;
+                         # Wayland 会话 (XDG_SESSION_TYPE/WAYLAND_DISPLAY) 且可提权时顺带配置 uinput
+                         # 权限 (udev 规则内容内联了一份, 改 scripts/99-touch-keyboard-uinput.rules 时须同步)。
+                         # TOUCH_KB_VERSION=vx.y.z 指定版本, GH_PROXY=<前缀>/ 走加速代理
 scripts/focus-watch.sh   # 轮询 _NET_ACTIVE_WINDOW 观察焦点(仅对 X11 目标可见)
 scripts/touch-tap.py     # uinput 虚拟触摸屏注入真实触摸(需 input 组; 只发 ABS_X/Y+BTN_TOUCH,
                          #  mutter 会当数位板处理, 不能完全等同真触摸屏)

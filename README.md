@@ -20,14 +20,37 @@
 
 ## 下载安装
 
-从 [GitHub Releases](https://github.com/Masterchiefm/touch-keyboard/releases) 下载最新版:
+**一键安装**(自动获取最新 Release:Debian/Ubuntu 安装 `.deb`,无法提权或其他发行版安装
+AppImage 到用户目录并创建应用菜单项;再次运行即可升级到最新版):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Masterchiefm/touch-keyboard/main/scripts/install.sh | bash
+```
+
+- 安装指定版本:
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/Masterchiefm/touch-keyboard/main/scripts/install.sh | TOUCH_KB_VERSION=v0.1.0 bash
+  ```
+
+- GitHub 访问不畅(国内)时走加速代理,`<加速前缀>` 为任一 GitHub 加速服务(形如 `https://xxx/`),脚本查版本、下载安装包均走该代理:
+
+  ```bash
+  GH_PROXY=<加速前缀> bash -c "$(curl -fsSL <加速前缀>/https://raw.githubusercontent.com/Masterchiefm/touch-keyboard/main/scripts/install.sh)"
+  ```
+
+- Debian/Ubuntu 安装 `.deb` 时会请求 sudo 密码(自动补齐依赖);Wayland 会话下脚本会顺带
+  配置 uinput 权限并提示注销重登,X11 会话跳过该步。
+
+也可以从 [GitHub Releases](https://github.com/Masterchiefm/touch-keyboard/releases) 手动下载:
 
 | 产物 | 适用 | 安装 |
 |---|---|---|
 | `TouchKeyboard_x.y.z_amd64.deb` | Debian / Ubuntu 及衍生 | `sudo apt install ./TouchKeyboard_x.y.z_amd64.deb` |
 | `TouchKeyboard_x.y.z_amd64.AppImage` | 其他发行版 | `chmod +x TouchKeyboard_*.AppImage && ./TouchKeyboard_*.AppImage`(需要 FUSE) |
 
-安装后按[下文](#uinput-权限配置推荐wayland-会话必需)配置 uinput 权限(Wayland 会话按键注入必需)。
+安装后按[下文](#uinput-权限配置推荐wayland-会话必需)配置 uinput 权限(Wayland 会话按键注入必需;
+一键安装脚本在 Wayland 会话下已自动配置)。
 
 ## 功能
 
@@ -111,6 +134,7 @@ touch-keyboard/
 │   └── src/xutil.rs          # X11 不抢焦点/Shape 输入区域/工作区/全局光标
 ├── .github/workflows/build.yml  # CI: v* 标签自动构建并发布 Release
 ├── scripts/
+│   ├── install.sh            # 一键安装: 查最新 Release → 按发行版装 .deb 或 AppImage + uinput 权限
 │   ├── release.sh            # 发版脚本(版本号同步 + 提交 + 打标签)
 │   ├── setup-uinput.sh       # uinput 权限配置
 │   └── smoke-test.sh         # Xvfb 冒烟测试
