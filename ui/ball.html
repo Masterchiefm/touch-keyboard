@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>悬浮球</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 球窗口被 GTK 强制为最小 200x200, 球体只占 56px。
+       贴右/下边缘时球体须锚定到窗口右/下角 (body 加 c-h-r / c-v-b 类),
+       否则窗口需伸出屏幕外而被 WM 拉回, 球体无法贴边。 */
+    body {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    #ball {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 28%, #3ecfe0 0%, #17849b 45%, #0b3f4d 100%);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45), inset 0 1px 3px rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      cursor: grab;
+      /* 位置不加过渡: setCorner 后需立刻读 rect 上报穿透区域, 过渡会读到旧位置 */
+      transition: transform .12s;
+    }
+    body.c-h-r #ball { left: calc(100% - 56px); }
+    body.c-v-b #ball { top: calc(100% - 56px); }
+    #ball.pressing { transform: scale(0.9); cursor: grabbing; }
+  </style>
+</head>
+<body>
+  <div id="ball" title="点击恢复键盘, 按住拖动到屏幕边缘">
+    <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="#eafcff" stroke-width="1.7" stroke-linecap="round">
+      <rect x="2" y="6" width="20" height="12" rx="2.5"/>
+      <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M9.5 14h5"/>
+    </svg>
+  </div>
+  <script src="ball.js"></script>
+</body>
+</html>

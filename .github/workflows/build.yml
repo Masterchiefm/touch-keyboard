@@ -1,0 +1,62 @@
+name: Build
+
+# 出包走两条路 (同 zcode-speed-panel 的策略):
+#   1. 推送 v* 标签 → 自动创建 GitHub Release 并附 .deb / .AppImage 安装包
+#      (应用内「新版本检测」读的就是这个 Release, 见 src-tauri/src/updater.rs)
+#   2. Actions 页 Run workflow 手动触发 → 产物在本次运行的 Artifacts
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    # ubuntu-22.04: glibc 2.35, 与目标环境 (Ubuntu 22.04) 一致, 产物兼容面最大
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      # Tauri v2 Linux 构建依赖 (webkit2gtk-4.1 + 托盘 AppIndicator + AppImage 工具链);
+      # 前端为 ui/ 纯静态文件, 无 Node 构建步骤
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      # 推送 v* 标签时自动创建 GitHub Release 并附上安装包;
+      # 手动触发 (workflow_dispatch) 只出产物 (Artifacts), 不发 Release
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: "TouchKeyboard __VERSION__"
+          releaseDraft: false
+          prerelease: false
+          releaseBody: "Linux 触屏键盘 (Tauri 2)。Debian/Ubuntu 下载 `.deb` 安装: `sudo apt install ./TouchKeyboard_x.y.z_amd64.deb`; 其他发行版下载 `.AppImage` 直接运行 (需要 FUSE, 或 `--appimage-extract-and-run`)。Wayland 会话按键注入需要 uinput 权限: `sudo bash scripts/setup-uinput.sh` 后重新登录 (详见 README)。"
+          args: --bundles deb appimage
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error

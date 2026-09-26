@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>键盘设置</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="settings-page">
+  <!-- 独立设置窗口: 复用 style.css 的 #settings 样式, 由 body.settings-page 调整为铺满窗口。
+       条件显示项 (悬浮宽度/分裂宽度) 必须放在面板底部: 模式切换时它们插入/移除,
+       若在按钮中间会把下方控件顶得移位, 下一次点按就落在滑块上 —— 按钮像"失灵" (已踩坑) -->
+  <div id="settings" class="settings-root">
+    <div class="set-title" id="set-head">
+      <span>键盘设置</span>
+      <button id="set-close" title="关闭">✕</button>
+    </div>
+    <label class="set-item">
+      <span>透明度 <b id="opacity-val">95%</b></span>
+      <input type="range" id="opacity" min="30" max="100" step="5">
+    </label>
+    <label class="set-item">
+      <span>键盘大小 <b id="size-val">100%</b></span>
+      <input type="range" id="size" min="70" max="150" step="5">
+    </label>
+    <div class="set-item set-row">
+      <span>布局模式</span>
+      <div class="seg">
+        <button id="mode-full">完整</button>
+        <button id="mode-split">分裂</button>
+      </div>
+    </div>
+    <div class="set-item set-row">
+      <span>窗口模式</span>
+      <div class="seg">
+        <button id="win-dock">停靠</button>
+        <button id="win-float">悬浮</button>
+      </div>
+    </div>
+    <div class="set-item set-row">
+      <span>主题</span>
+      <div class="seg">
+        <button id="theme-light">浅色</button>
+        <button id="theme-dark">深色</button>
+        <button id="theme-auto">跟随系统</button>
+      </div>
+    </div>
+    <div class="set-item set-checks">
+      <label id="numrow-item"><input type="checkbox" id="numrow"> 数字行(仅分裂)</label>
+      <label><input type="checkbox" id="clickthrough"> 空白处穿透</label>
+      <label><input type="checkbox" id="bubble"> 按键气泡</label>
+    </div>
+    <label class="set-item">
+      <span>触摸板速度 <b id="tpspeed-val">100%</b></span>
+      <input type="range" id="tpspeed" min="30" max="300" step="10">
+    </label>
+    <div class="set-item set-checks">
+      <label><input type="checkbox" id="tp-tap"> 轻触点击</label>
+      <label><input type="checkbox" id="tp-natural"> 自然滚动</label>
+    </div>
+    <label class="set-item" id="floatw-item">
+      <span>悬浮宽度 <b id="floatw-val">60%</b></span>
+      <input type="range" id="floatw" min="30" max="90" step="5">
+    </label>
+    <label class="set-item" id="splitw-item">
+      <span>分裂宽度 <b id="splitw-val">6.8</b></span>
+      <input type="range" id="splitw" min="50" max="95" step="5">
+    </label>
+    <div class="set-hint">空白穿透: 点按按键之外的空白处可直达下层应用<br>按住顶部把手拖动可移动键盘, 松手自动悬浮; 点「停靠」回到底部整行<br>分裂宽度: 分裂布局两半面板的宽度 (单位: 键距)<br>触摸板: 托盘菜单开关; 单指移动/轻触单击, 双指滚动/轻触右键, 三指轻触中键; 按住不动再滑动 = 拖动<br>设置窗口不抢焦点, 调整时键盘可正常向目标应用打字</div>
+    <!-- 「关于/更新」固定在最底部: 更新卡片为条件显示项, 不得插在控件中间
+         (模式切换时条件项插入/移除会把下方控件顶得移位, 已踩坑, 见 AGENTS.md) -->
+    <div class="set-about">
+      <div class="set-row about-row">
+        <span id="about-version">版本</span>
+        <button id="check-update" type="button">检查更新</button>
+      </div>
+      <div id="update-result"></div>
+      <div id="update-card" class="hidden">
+        <div class="upd-head">发现新版本 <b id="update-version"></b></div>
+        <div id="update-notes" class="upd-notes"></div>
+        <button id="update-open" type="button" class="primary">查看更新</button>
+      </div>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

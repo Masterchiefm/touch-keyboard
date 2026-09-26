@@ -1,0 +1,668 @@
+/* 触屏键盘前端样式: Windows 屏幕键盘风格
+   浅灰面板 + 白色字符键 + 灰色功能键, 键帽近正方, 顶栏(⚙/把手/✕) + 工具条。
+   所有尺寸以 --u 为基准单位 (u = 键距 = 键盘窗口高度 / 5.82, 由后端保证高宽比 0.375),
+   悬浮/缩放时整体等比缩放。 */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+
+html, body {
+  background: transparent;
+  overflow: hidden;
+  height: 100%;
+  touch-action: manipulation;
+}
+
+body {
+  font-family: 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'PingFang SC', system-ui, sans-serif;
+  color: #1b1b1b;
+}
+
+#app {
+  --u: calc(var(--kbh, 400px) / 5.82);        /* 基准键距 */
+  --gap: calc(var(--u) * 0.13);               /* 键间距 */
+  --rad: calc(var(--u) * 0.065);              /* 键帽圆角 */
+  --rad-panel: calc(var(--u) * 0.10);         /* 面板圆角 */
+  --bg: #dbdcdd;                              /* 面板底色 */
+  --key: #ffffff;                             /* 字符键 */
+  --mod: #ececee;                             /* 功能键 */
+  --line: #ced0d2;                            /* 键边框 / 分隔线 */
+  --accent: #0067c0;                          /* 修饰键激活色 (Windows 强调蓝) */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#kb {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 分裂模式: 基准单位改由半面板宽度推算 (单位 ≈ 宽/6.8, 上限 76.5px);
+   面板宽度 = --u × --su (分裂宽度设置, 键距数 5.0-9.5, 由 JS 写在 #app 上),
+   上限 46% 窗宽防止两半重叠。键距只随屏幕宽变化, 与分裂宽度设置无关 */
+#kb[data-mode="split"] {
+  --u: min(calc(var(--kbw, 1280px) * 0.39 / 6.8), 76.5px, calc(var(--kbw, 1280px) * 0.46 / var(--su, 6.8)));
+}
+
+.split-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 0 calc(var(--u) * 0.11) calc(var(--u) * 0.13);
+  min-width: 0;
+}
+
+/* 分裂面板: 独立圆角面板, 各带小标题栏, 与另一半互不相连 */
+.panel.half {
+  flex: 0 0 min(calc(var(--u) * var(--su, 6.8)), calc(var(--kbw, 1280px) * 0.46));
+  border-radius: var(--rad-panel);
+}
+
+.panel.half .titlebar {
+  margin: calc(var(--u) * -0.02) calc(var(--u) * -0.11) 0; /* 抵消面板内边距, 铺满面板顶部 */
+  padding: 0 calc(var(--u) * 0.11);
+  border-radius: var(--rad-panel) var(--rad-panel) 0 0;
+}
+
+.panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding: calc(var(--u) * 0.02) calc(var(--u) * 0.11) calc(var(--u) * 0.13);
+  background: var(--bg);
+  border-radius: 0 0 var(--rad-panel) var(--rad-panel);
+}
+
+/* ---- 顶栏 (Windows 风格): ⚙ | 拖动把手 | ✕ ---- */
+.titlebar {
+  flex: 0 0 calc(var(--u) * 0.55);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 0 calc(var(--u) * 0.11); /* 与面板内边距一致, ⚙/✕ 与键列对齐 */
+  background: var(--bg);
+  border-radius: var(--rad-panel) var(--rad-panel) 0 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ---- 工具条: 布局/窗口模式快捷键 + 弹簧把手(空白处可拖动) ---- */
+.toolbar {
+  flex: 0 0 calc(var(--u) * 0.49);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 0 calc(var(--u) * 0.11) calc(var(--u) * 0.04);
+  background: var(--bg);
+}
+
+/* 顶栏/工具条图标按钮 */
+.key.tbtn {
+  flex: 0 0 auto;
+  width: calc(var(--u) * 0.46);
+  height: calc(var(--u) * 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: var(--rad);
+  color: #3d3f41;
+  font-size: calc(var(--u) * 0.26);
+}
+
+.key.tbtn.wide {
+  width: auto;
+  padding: 0 calc(var(--u) * 0.20);
+  font-size: calc(var(--u) * 0.19);
+}
+
+.key.tbtn.pressing { background: rgba(0, 0, 0, 0.10); filter: none; transform: none; }
+
+/* 拖动把手: 透明可点区 + 居中短横条 (Windows 把手样式), 按住由 Rust 端全局光标跟随 */
+.grip {
+  flex: 1 1 0;
+  min-width: calc(var(--u) * 0.5);
+  align-self: stretch;
+  position: relative;
+}
+
+.grip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--u) * 0.78);
+  height: max(3px, calc(var(--u) * 0.045));
+  transform: translate(-50%, -50%);
+  border-radius: 99px;
+  background: #797979;
+}
+
+.grip.pressing::after { background: #3d3f41; }
+
+/* 工具条弹簧把手只保留拖动功能, 不画横条 (顶栏已有把手, 避免视觉重复) */
+.toolbar .grip::after { content: none; }
+
+.row {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+}
+
+/* 数字/符号首行: Windows 为 0.68 倍矮行 */
+.row.row-nums { flex: 0.68 1 0; }
+
+.key {
+  background: var(--key);
+  color: #1b1b1b;
+  border: 1px solid var(--line);
+  border-radius: var(--rad);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--u) * 0.24);
+  font-weight: 400;
+  overflow: hidden;
+  white-space: nowrap;
+  -webkit-user-drag: none;
+  transition: transform .05s, filter .05s;
+}
+
+/* 步距模型: 键占位 = 权重/总权重 × 行宽, 键间隔含在步距内 (末键吸收),
+   累计权重相同的键边界跨行像素级对齐 (如 ↑ 与 ↓ 同列) */
+.row .key {
+  flex: none;
+  width: calc((100% / var(--total)) * var(--w, 1) - var(--gap));
+  margin-right: var(--gap);
+}
+
+.row .key:last-child {
+  margin-right: 0;
+  width: calc((100% / var(--total)) * var(--w, 1));
+}
+
+.key.mod { background: var(--mod); }
+
+.key.pressing {
+  filter: brightness(0.90);
+  transform: scale(0.985);
+}
+
+/* 一次性修饰键激活态: Windows 强调蓝 */
+.key.armed {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.key.locked {
+  background: #005ba1;
+  border-color: #005ba1;
+  color: #fff;
+}
+
+/* ---- 「开始」键: 系统图标 (无则 Linux 企鹅 SVG, fill=currentColor 随主题变色) ---- */
+.start-ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.start-ic svg,
+.start-img {
+  width: calc(var(--u) * 0.42);
+  height: calc(var(--u) * 0.42);
+  pointer-events: none;
+}
+
+/* 系统图标多为深色单色位图, 深色主题下反相并保持色相 */
+html.dark .start-img { filter: invert(1) hue-rotate(180deg); }
+
+/* 上档符号双行键帽: 上为 shift 字符, 下为主字符; shift/caps 激活时高亮上档 */
+.key.dual { flex-direction: column; line-height: 1.12; }
+
+.key.dual .sup {
+  font-size: calc(var(--u) * 0.165);
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.key.dual .main { font-size: calc(var(--u) * 0.24); }
+
+.shift-on .key.dual .sup {
+  color: var(--accent);
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* ---- 按键气泡: 手指遮挡键帽时在按键上方放大显示所按内容 ----
+   挂在 #app 下 (position:fixed), 不随键区整树重绘, 不并入键盘透明度。
+   配色=键帽配色 (--key/--line 随主题切换: 浅色白底描边, 深色灰底浅字),
+   箭头 background:inherit 自动跟随 */
+.kb-bubble {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  min-width: calc(var(--u) * 1.6);
+  height: calc(var(--u) * 1.45);
+  padding: 0 calc(var(--u) * 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--key);
+  color: #1b1b1b;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--u) * 0.12);
+  font-size: calc(var(--u) * 0.58);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  opacity: 1;
+  transition: opacity .12s;
+}
+
+/* 指向箭头: 旋转 45° 的小方块, 背景色继承气泡, 描边只留朝下的两边 */
+.kb-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: calc(var(--u) * 0.16);
+  height: calc(var(--u) * 0.16);
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: inherit;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 多字符标签 (Esc/Tab/Caps/Shift/空格 等) 用小号字 */
+.kb-bubble.small {
+  font-size: calc(var(--u) * 0.27);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.kb-bubble.fade { opacity: 0; }
+
+#banner {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(196, 43, 28, 0.95);
+  color: #fff;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  z-index: 99;
+  max-width: 90%;
+}
+
+.hidden { display: none !important; }
+
+/* ---- 设置窗口 (独立窗体 settings.html; 保持不透明, 勿并入键盘透明度) ---- */
+
+#settings {
+  position: absolute;
+  top: 4%;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(400px, 94%);
+  background: #f6f7f8;
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #1b1b1b;
+  z-index: 50;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.30);
+  border: 1px solid #d5d7d9;
+  font-size: 14px;
+  user-select: none;
+  overflow-y: auto;
+}
+
+/* 设置窗口页面: 面板铺满整个窗口 (窗口本身即设置面板) */
+body.settings-page {
+  background: #f6f7f8;
+}
+
+body.settings-page #settings {
+  position: absolute;
+  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  transform: none;
+  width: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+}
+
+.set-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex: 0 0 auto;
+  cursor: default; /* 标题栏空白处按住可拖动窗口 */
+  touch-action: none;
+}
+
+#set-close,
+#tp-close {
+  background: #e2e4e6;
+  color: #3d3f41;
+  border: none;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.set-item { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.set-item span { display: flex; justify-content: space-between; }
+.set-item b { color: var(--accent, #0067c0); font-weight: 600; }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #d8dadd;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0067c0;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
+.set-row { flex-direction: row; align-items: center; justify-content: space-between; }
+
+.seg { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid #cfd2d5; }
+
+.seg button {
+  background: transparent;
+  color: #55585c;
+  border: none;
+  padding: 4px 14px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.seg button.active { background: #0067c0; color: #fff; font-weight: 700; }
+
+.set-checks { flex-direction: row; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.set-checks label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.set-checks input { width: 15px; height: 15px; accent-color: #0067c0; }
+
+.set-hint { font-size: 11.5px; color: #7a7f85; line-height: 1.45; }
+
+/* ---- 关于 / 新版本检测 (设置窗口底部; 更新卡片为条件显示项, 依布局铁律放最底) ---- */
+.set-about { flex: 0 0 auto; padding-top: 6px; border-top: 1px solid #d5d7d9; }
+.about-row { justify-content: space-between; align-items: center; }
+.about-row span { color: #7a7f85; font-size: 12.5px; }
+.set-about button {
+  background: #ececee;
+  color: #1b1b1b;
+  border: 1px solid #c6c9cc;
+  border-radius: 8px;
+  padding: 5px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.set-about button.primary { background: #0067c0; border-color: #0067c0; color: #fff; font-weight: 600; }
+.set-about button:active { filter: brightness(0.92); }
+#update-result { font-size: 12px; color: #7a7f85; }
+#update-card {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid #0067c0;
+  border-radius: 10px;
+  background: #eef4fa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.upd-head { font-size: 13px; }
+.upd-head b { color: #0067c0; }
+.upd-notes {
+  font-size: 11.5px;
+  color: #55585c;
+  line-height: 1.4;
+  max-height: 72px;
+  overflow-y: auto;
+  white-space: pre-line;
+  align-self: stretch;
+}
+
+/* 键盘页 ⚙ 角标: 检测到新版本时的红点提示 (update-available 事件) */
+.key.tbtn.upd { position: relative; }
+.key.tbtn.upd::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e5484d;
+}
+
+/* ---- 深色主题 (html.dark): Windows 深色屏幕键盘风格 ----
+   面板深灰、键帽中灰、强调色提亮为 #4cc2ff; 设置窗口一并适配 */
+
+html.dark body { color: #f1f1f2; }
+
+html.dark #app {
+  --bg: #26262a;      /* 面板底色 */
+  --key: #3a3a3f;     /* 字符键 */
+  --mod: #303035;     /* 功能键 */
+  --line: #1b1b1f;    /* 键边框 */
+  --accent: #4cc2ff;  /* 修饰键激活色 (Windows 深色强调蓝) */
+}
+
+html.dark .key {
+  color: #f1f1f2;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+html.dark .key.armed { color: #101418; }
+
+html.dark .key.locked {
+  background: #2f97d6;
+  border-color: #2f97d6;
+  color: #101418;
+}
+
+html.dark .key.pressing { filter: brightness(1.35); }
+
+html.dark .key.tbtn { color: #c8c8cc; }
+
+html.dark .grip::after { background: #8a8a8f; }
+
+html.dark .grip.pressing::after { background: #c8c8cc; }
+
+html.dark .key.tbtn.pressing { background: rgba(255, 255, 255, 0.14); }
+
+/* 设置窗口深色 */
+html.dark body.settings-page { background: #26262a; }
+
+html.dark #settings {
+  background: #26262a;
+  color: #e8e8ea;
+  border-color: #17171a;
+}
+
+html.dark #set-close,
+html.dark #tp-close { background: #3a3a3f; color: #c8c8cc; }
+
+html.dark .seg { border-color: #17171a; }
+
+html.dark .seg button { color: #b9bcc0; }
+
+html.dark .seg button.active {
+  background: #4cc2ff;
+  color: #101418;
+}
+
+html.dark input[type="range"] { background: #4a4a50; }
+
+html.dark input[type="range"]::-webkit-slider-thumb {
+  background: #4cc2ff;
+  border-color: #26262a;
+}
+
+html.dark .set-item b { color: #4cc2ff; }
+
+html.dark .set-checks input { accent-color: #4cc2ff; }
+
+html.dark .set-hint { color: #9a9ea4; }
+
+/* 关于/更新深色 */
+html.dark .set-about { border-top-color: #17171a; }
+html.dark .about-row span,
+html.dark #update-result { color: #9a9ea4; }
+html.dark .set-about button { background: #3a3a3f; color: #e8e8ea; border-color: #17171a; }
+html.dark .set-about button.primary { background: #4cc2ff; border-color: #4cc2ff; color: #101418; }
+html.dark #update-card { background: #2a3038; border-color: #2f97d6; }
+html.dark .upd-head b { color: #4cc2ff; }
+html.dark .upd-notes { color: #b9bcc0; }
+
+/* 气泡深色: 底色/描边已随 --key/--line 变为键帽配色, 只需文字提亮、加深投影 */
+html.dark .kb-bubble {
+  color: #f1f1f2;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+}
+
+/* ---- 屏幕触摸板窗口 (touchpad.html; 类 Windows 系统触摸板, 配色随主题) ---- */
+
+#tp {
+  --bg: #dbdcdd;
+  --key: #ffffff;
+  --mod: #ececee;
+  --line: #ced0d2;
+  --accent: #0067c0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg);
+}
+
+html.dark #tp {
+  --bg: #26262a;
+  --key: #3a3a3f;
+  --mod: #303035;
+  --line: #1b1b1f;
+  --accent: #4cc2ff;
+}
+
+body.tp-page { background: #dbdcdd; }
+
+/* 手势期间隐藏光标: mutter 把光标"胶"在手指上 (鬼影落在板内), 隐藏之;
+   仅手势进行中 (html.gesturing), 平时光标正常显示 —— 抬手后后端伺服拉回 V。
+   不能永久隐藏: 若回位失效, 光标会停在板上不可见 (已踩坑) */
+html.gesturing body.tp-page, html.gesturing body.tp-page * { cursor: none !important; }
+
+html.dark body.tp-page { background: #26262a; }
+
+.tp-head {
+  flex: 0 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2px;
+  color: #3d3f41;
+  cursor: default; /* 顶栏空白处按住可拖动窗口 */
+  touch-action: none;
+}
+
+.tp-title { font-size: 13px; font-weight: 700; }
+
+html.dark .tp-head { color: #c8c8cc; }
+
+/* 触摸表面: 手势全自管 (touch-action:none), 触摸中描边提亮反馈 */
+#tp-surface {
+  flex: 1 1 0;
+  min-height: 0;
+  background: var(--key);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.10);
+  transition: border-color .08s;
+}
+
+#tp-surface.touching { border-color: var(--accent); }
+
+/* 长按进入拖动态: 描边加粗提示 (左键按住中) */
+#tp-surface.dragging { border-width: 2px; }
+
+.tp-hint {
+  pointer-events: none;
+  text-align: center;
+  font-size: 12px;
+  color: #9aa0a6;
+  line-height: 1.7;
+}
+
+html.dark #tp-surface { box-shadow: 0 1px 1px rgba(0, 0, 0, 0.45); }
+
+html.dark .tp-hint { color: #7c8188; }
+
+.tp-buttons {
+  flex: 0 0 54px;
+  display: flex;
+  gap: 8px;
+}
+
+.tp-btn {
+  flex: 1;
+  background: var(--mod);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3d3f41;
+  font-size: 13px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.10);
+  touch-action: none;
+  transition: filter .05s, transform .05s;
+}
+
+html.dark .tp-btn {
+  color: #e8e8ea;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+.tp-btn.pressing { filter: brightness(0.92); transform: scale(0.99); }
+
+html.dark .tp-btn.pressing { filter: brightness(1.35); }

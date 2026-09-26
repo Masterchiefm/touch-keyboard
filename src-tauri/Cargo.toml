@@ -1,0 +1,27 @@
+[package]
+name = "touch-keyboard"
+version = "0.1.0"
+description = "Linux 触屏键盘 - 支持 X11/Wayland、分裂布局、悬浮球、托盘常驻"
+edition = "2021"
+rust-version = "1.77"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+x11rb = { version = "0.13", features = ["xtest", "shape"] }
+libc = "0.2"
+# 新版本检测 (updater.rs): 同步阻塞式 HTTP 客户端 (rustls, 无 OpenSSL 依赖)
+ureq = { version = "2", features = ["json", "native-certs"] }
+
+[target.'cfg(any(target_os = "linux", target_os = "freebsd"))'.dependencies]
+gtk = "0.18"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1

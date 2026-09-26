@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>触摸板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="tp-page">
+  <!-- 屏幕触摸板 (类 Windows 系统触摸板): 触摸表面 + 左右按键。
+       手势全部走 touch 事件 (WebKitGTK 真实触摸的可靠路径);
+       表面/按键有意忽略鼠标事件 —— 注入的指针事件会落到自家窗口上形成反馈回路。 -->
+  <div id="tp">
+    <div class="tp-head" id="tp-head">
+      <span class="tp-title">触摸板</span>
+      <button id="tp-close" title="关闭">✕</button>
+    </div>
+    <div id="tp-surface">
+      <div class="tp-hint">单指移动指针 · 轻触单击<br>双指滚动 · 双指轻触右键 · 三指轻触中键<br>按住不动再滑动可拖动</div>
+    </div>
+    <div class="tp-buttons">
+      <div class="tp-btn" id="tp-btn-l"><span>左键 (轻触)</span></div>
+      <div class="tp-btn" id="tp-btn-r"><span>右键 (轻触)</span></div>
+    </div>
+  </div>
+  <div id="banner" class="hidden"></div>
+  <script src="touchpad.js"></script>
+</body>
+</html>

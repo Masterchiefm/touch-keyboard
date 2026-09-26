@@ -1,0 +1,2 @@
+# 允许 input 组用户访问 uinput (触摸屏键盘注入按键所需)
+KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"

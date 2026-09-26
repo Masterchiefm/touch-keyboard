@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=TouchKeyboard 触屏键盘
+Comment=Linux 触摸屏虚拟键盘 (完整/分裂布局, 悬浮球, 托盘常驻)
+Exec=/home/chief/.zcode/workspace/default/touch-keyboard/src-tauri/target/release/touch-keyboard
+Icon=/home/chief/.zcode/workspace/default/touch-keyboard/src-tauri/icons/icon.png
+Terminal=false
+Categories=Utility;Accessibility;
+X-GNOME-Autostart-enabled=true
