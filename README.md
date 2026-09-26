@@ -39,8 +39,9 @@ curl -fsSL https://raw.githubusercontent.com/Masterchiefm/touch-keyboard/main/sc
   GH_PROXY=<加速前缀> bash -c "$(curl -fsSL <加速前缀>/https://raw.githubusercontent.com/Masterchiefm/touch-keyboard/main/scripts/install.sh)"
   ```
 
-- Debian/Ubuntu 安装 `.deb` 时会请求 sudo 密码(自动补齐依赖);Wayland 会话下脚本会顺带
-  配置 uinput 权限并提示注销重登,X11 会话跳过该步。
+- Debian/Ubuntu 安装 `.deb` 时会请求 sudo 密码(自动补齐依赖;提权失败会自动转用 AppImage);
+  Wayland 会话下脚本会顺带配置 uinput 权限并提示注销重登(无 sudo 权限时只提示手动命令),
+  X11 会话跳过该步。
 
 也可以从 [GitHub Releases](https://github.com/Masterchiefm/touch-keyboard/releases) 手动下载:
 

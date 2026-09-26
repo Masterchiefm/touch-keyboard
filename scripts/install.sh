@@ -98,17 +98,22 @@ trap 'rm -rf "$TMP"' EXIT
 URL_BASE="$(gh_url "https://github.com/$REPO/releases/download/$TAG")"
 
 install_deb() {
+  # 返回非 0 = 未能装上 (如当前用户无 sudo 权限), 由主流程回落 AppImage
   local asset="${PROD}_${VER}_${PKG_ARCH}.deb"
   msg "下载 $asset ($TAG) ..."
-  fetch_file "$URL_BASE/$asset" "$TMP/$asset" \
-    || die "下载失败: $URL_BASE/$asset
-请到 https://github.com/$REPO/releases 确认 $TAG 是否有 ${PKG_ARCH} 架构安装包"
+  fetch_file "$URL_BASE/$asset" "$TMP/$asset" || {
+    warn "下载失败: $URL_BASE/$asset"
+    return 1
+  }
   msg "安装 $asset (如提示请输入密码) ..."
   if ! $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y "$TMP/$asset"; then
     warn "apt 安装失败, 回退 dpkg 并修复依赖 ..."
-    $SUDO dpkg -i "$TMP/$asset" \
-      || $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -f install -y \
-      || die "deb 安装失败。可手动下载 $asset 后执行: sudo apt install ./$asset"
+    if ! $SUDO dpkg -i "$TMP/$asset"; then
+      if ! $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -f install -y; then
+        warn "deb 安装失败 (当前用户可能无 sudo 权限), 转用 AppImage ..."
+        return 1
+      fi
+    fi
   fi
   INSTALL_SUMMARY="已通过 apt 安装 $TAG (二进制: /usr/bin/$BIN_NAME, 应用菜单: TouchKeyboard 触屏键盘)
 卸载: sudo apt remove $PKG"
@@ -165,10 +170,15 @@ setup_uinput() {
     return 0
   fi
   msg "配置 uinput 权限 (Wayland 会话按键注入必需) ..."
-  printf '%s\n' \
-    '# 允许 input 组用户访问 uinput (触摸屏键盘注入按键所需)' \
-    'KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"' \
-    | $SUDO tee "$rule" >/dev/null
+  if ! printf '%s\n' \
+      '# 允许 input 组用户访问 uinput (触摸屏键盘注入按键所需)' \
+      'KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"' \
+      | $SUDO tee "$rule" >/dev/null; then
+    warn "udev 规则写入失败 (当前用户可能无 sudo 权限), 跳过。请安装后手动执行 (然后注销重新登录):"
+    echo "  echo 'KERNEL==\"uinput\", MODE=\"0660\", GROUP=\"input\", OPTIONS+=\"static_node=uinput\"' | sudo tee $rule"
+    echo "  sudo groupadd -f input && sudo usermod -aG input \"$target_user\""
+    return 1
+  fi
   $SUDO groupadd -f input 2>/dev/null || true
   if command -v usermod >/dev/null 2>&1; then
     $SUDO usermod -aG input "$target_user" || true
@@ -183,7 +193,7 @@ SESSION="${XDG_SESSION_TYPE:-}"
 [ -n "$SESSION" ] || [ -z "${WAYLAND_DISPLAY:-}" ] || SESSION=wayland
 if [ "$SESSION" = "wayland" ]; then
   if have_root; then
-    setup_uinput
+    setup_uinput || true   # 失败只警告 (函数内已提示), 不阻断安装
   else
     warn "Wayland 会话需要 uinput 权限, 但当前无法提权。请安装后手动执行 (然后注销重新登录):"
     echo "  echo 'KERNEL==\"uinput\", MODE=\"0660\", GROUP=\"input\", OPTIONS+=\"static_node=uinput\"' | sudo tee /etc/udev/rules.d/99-touch-keyboard-uinput.rules"
@@ -193,9 +203,9 @@ else
   msg "提示: Wayland 会话需配置 uinput 权限后才能给原生应用打字 (X11 会话可跳过), 参见 README「uinput 权限配置」"
 fi
 
-# ---- 选择安装方式: Debian 系且能提权 → deb, 否则 AppImage (免 root) ----
-if command -v apt-get >/dev/null 2>&1 && have_root; then
-  install_deb
+# ---- 选择安装方式: Debian 系且能提权 → deb (装不上自动回落), 否则 AppImage (免 root) ----
+if command -v apt-get >/dev/null 2>&1 && have_root && install_deb; then
+  :
 else
   install_appimage
 fi
