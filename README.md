@@ -9,6 +9,13 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![布局](https://img.shields.io/badge/布局-完整%20%2F%20分裂-blue) ![会话](https://img.shields.io/badge/会话-X11%20%2F%20Wayland-green)
 
+| 浅色主题 | 深色主题 |
+|---|---|
+| ![浅色主题](docs/images/keyboard-light.png) | ![深色主题](docs/images/keyboard-dark.png) |
+
+> 真机 GNOME Wayland (Ubuntu 22.04) 实拍:停靠模式下向 GNOME「设置」搜索框打字(IBus 拼音),
+> 键盘不抢焦点、候选词正常上屏;`o` 键上方是按键气泡,dock 自动避让。「开始」键直接取系统图标。
+
 目标环境为 GNOME Wayland(Ubuntu 22.04)+ XWayland,兼容纯 X11 会话。
 
 ## 下载安装
